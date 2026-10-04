@@ -12,14 +12,14 @@ import { Textarea } from '@/components/ui/textarea';
 import type { FormFieldProps } from '@/components/forms/field-props';
 import type { FieldValues } from 'react-hook-form';
 
-type MarkdownFieldProps<T extends FieldValues> = FormFieldProps<T> & {
+type MarkdownFieldProps<T extends FieldValues, TTransformed extends FieldValues = T> = FormFieldProps<T, TTransformed> & {
   maxLength: number;
   rows?: number;
 };
 
 const MARKDOWN_HELP = 'Supports Markdown: **bold**, _italic_, `code`, lists, links and code blocks.';
 
-export function MarkdownField<T extends FieldValues>({
+export function MarkdownField<T extends FieldValues, TTransformed extends FieldValues = T>({
   control,
   name,
   label,
@@ -27,7 +27,7 @@ export function MarkdownField<T extends FieldValues>({
   isRequired,
   maxLength,
   rows = 10,
-}: MarkdownFieldProps<T>) {
+}: MarkdownFieldProps<T, TTransformed>) {
   const {
     field: { ref, name: inputName, value: fieldValue, onChange, onBlur },
     fieldState,

@@ -10,7 +10,13 @@ import type { FormFieldProps } from '@/components/forms/field-props';
 import type { FieldValues } from 'react-hook-form';
 
 // A calendar month stored as `YYYY-MM` (or null); optional ones can be cleared.
-export function MonthField<T extends FieldValues>({ control, name, label, description, isRequired = false }: FormFieldProps<T>) {
+export function MonthField<T extends FieldValues, TTransformed extends FieldValues = T>({
+  control,
+  name,
+  label,
+  description,
+  isRequired = false,
+}: FormFieldProps<T, TTransformed>) {
   const {
     field: { ref, value: fieldValue, onChange, onBlur },
     fieldState,

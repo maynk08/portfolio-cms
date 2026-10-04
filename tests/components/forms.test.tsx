@@ -41,7 +41,6 @@ const schema = z.object({
 });
 
 type FormInput = z.input<typeof schema>;
-type FormOutput = z.output<typeof schema>;
 
 const emptyValues: FormInput = {
   title: '',
@@ -54,11 +53,11 @@ const emptyValues: FormInput = {
   highlights: [],
 };
 
-function TestForm({ action, onSuccess }: { action: (values: FormOutput) => Promise<ActionResult>; onSuccess?: () => void }) {
+function TestForm({ action, onSuccess }: { action: (values: FormInput) => Promise<ActionResult>; onSuccess?: () => void }) {
   const actionForm = useActionForm({ schema, defaultValues: emptyValues, action, onSuccess });
   const { control } = actionForm.form;
   return (
-    <ActionForm actionForm={actionForm} cancelHref="/projects" submitLabel="Save project">
+    <ActionForm actionForm={actionForm} secondaryAction={{ type: 'cancel', href: '/projects' }} submitLabel="Save project">
       <TextField control={control} name="title" label="Title" isRequired />
       <NumberField control={control} name="years" label="Years" />
       <TextareaField control={control} name="summary" label="Summary" maxLength={10} />
@@ -71,7 +70,7 @@ function TestForm({ action, onSuccess }: { action: (values: FormOutput) => Promi
   );
 }
 
-function renderForm(action = vi.fn<(values: FormOutput) => Promise<ActionResult>>(), onSuccess = vi.fn()) {
+function renderForm(action = vi.fn<(values: FormInput) => Promise<ActionResult>>(), onSuccess = vi.fn()) {
   return { action, onSuccess, ...renderWithProviders(<TestForm action={action} onSuccess={onSuccess} />) };
 }
 
@@ -118,7 +117,7 @@ describe('form behaviour', () => {
     expect(action).not.toHaveBeenCalled();
   });
 
-  it('sends the parsed values, confirms with a toast and is no longer "unsaved"', async () => {
+  it('sends the raw form values for the action to validate, confirms with a toast and is no longer "unsaved"', async () => {
     const { user, action, onSuccess } = renderForm(
       vi.fn(() => Promise.resolve<ActionResult>({ ok: true, message: 'Project "Site" saved', data: null })),
     );
@@ -134,7 +133,7 @@ describe('form behaviour', () => {
     await waitFor(() => {
       expect(toast.success).toHaveBeenCalledWith('Project "Site" saved');
     });
-    expect(action).toHaveBeenCalledWith({ ...emptyValues, title: 'Site', years: 5, isFeatured: true, startDate: '2024-03' });
+    expect(action).toHaveBeenCalledWith({ ...emptyValues, title: '  Site ', years: 5, isFeatured: true, startDate: '2024-03' });
     expect(onSuccess).toHaveBeenCalledTimes(1);
     expect(screen.queryByText('Unsaved changes')).not.toBeInTheDocument();
   });

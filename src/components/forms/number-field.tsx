@@ -9,13 +9,21 @@ import { Input } from '@/components/ui/input';
 import type { FormFieldProps } from '@/components/forms/field-props';
 import type { FieldValues } from 'react-hook-form';
 
-type NumberFieldProps<T extends FieldValues> = FormFieldProps<T> & {
+type NumberFieldProps<T extends FieldValues, TTransformed extends FieldValues = T> = FormFieldProps<T, TTransformed> & {
   min?: number;
   max?: number;
 };
 
 // Holds a number, or null when empty.
-export function NumberField<T extends FieldValues>({ control, name, label, description, isRequired, min, max }: NumberFieldProps<T>) {
+export function NumberField<T extends FieldValues, TTransformed extends FieldValues = T>({
+  control,
+  name,
+  label,
+  description,
+  isRequired,
+  min,
+  max,
+}: NumberFieldProps<T, TTransformed>) {
   const {
     field: { ref, name: inputName, value: fieldValue, onChange, onBlur },
     fieldState,

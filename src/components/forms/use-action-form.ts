@@ -18,9 +18,12 @@ type UseActionFormOptions<TInput extends FieldValues, TOutput extends FieldValue
   // Shared with the Server Action, which validates again.
   schema: z.ZodType<TOutput, TInput>;
   defaultValues: DefaultValues<TInput>;
-  action: (values: TOutput) => Promise<ActionResult<TData>>;
+  // Receives the raw form values, which it validates again with the same schema (it is a public endpoint).
+  action: (values: TInput) => Promise<ActionResult<TData>>;
   // Runs after the success toast, e.g. to go back to the list after creating an item.
   onSuccess?: (result: ActionSuccess<TData>) => void;
+  // After saving, keep the saved values (default) or empty the form again (e.g. password fields).
+  resetAfterSuccess?: 'saved-values' | 'initial-values';
 };
 
 export interface ActionFormState<TInput extends FieldValues, TOutput extends FieldValues> {
@@ -38,6 +41,7 @@ export function useActionForm<TInput extends FieldValues, TOutput extends FieldV
   defaultValues,
   action,
   onSuccess,
+  resetAfterSuccess = 'saved-values',
 }: UseActionFormOptions<TInput, TOutput, TData>): ActionFormState<TInput, TOutput> {
   const [isPending, startTransition] = useTransition();
   const form = useForm<TInput, unknown, TOutput>({
@@ -46,7 +50,7 @@ export function useActionForm<TInput extends FieldValues, TOutput extends FieldV
     defaultValues,
   });
 
-  const submitValues = (values: TOutput): void => {
+  const submitValues = (values: TInput): void => {
     startTransition(async () => {
       let result: ActionResult<TData>;
       try {
@@ -62,7 +66,7 @@ export function useActionForm<TInput extends FieldValues, TOutput extends FieldV
       }
       notifySuccess(result.message);
       // The saved values become the new starting point, so the form is no longer "unsaved".
-      form.reset(form.getValues());
+      form.reset(resetAfterSuccess === 'saved-values' ? form.getValues() : defaultValues);
       onSuccess?.(result);
     });
   };
@@ -71,7 +75,11 @@ export function useActionForm<TInput extends FieldValues, TOutput extends FieldV
     form,
     isPending,
     submit: (event) => {
-      void form.handleSubmit(submitValues)(event);
+      // Validate in the browser first, then send the raw values: the action parses them itself, so it never receives
+      // already-transformed output that its schema would reject.
+      void form.handleSubmit(() => {
+        submitValues(form.getValues());
+      })(event);
     },
   };
 }

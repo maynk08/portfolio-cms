@@ -10,7 +10,12 @@ import type { FormFieldProps } from '@/components/forms/field-props';
 import type { FieldValues } from 'react-hook-form';
 
 // An on/off setting; it always has a value, so it is never marked required.
-export function SwitchField<T extends FieldValues>({ control, name, label, description }: Omit<FormFieldProps<T>, 'isRequired'>) {
+export function SwitchField<T extends FieldValues, TTransformed extends FieldValues = T>({
+  control,
+  name,
+  label,
+  description,
+}: Omit<FormFieldProps<T, TTransformed>, 'isRequired'>) {
   const {
     field: { ref, name: inputName, value: fieldValue, onChange, onBlur },
   } = useController({ control, name });

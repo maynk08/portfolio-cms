@@ -10,12 +10,12 @@ import { Textarea } from '@/components/ui/textarea';
 import type { FormFieldProps } from '@/components/forms/field-props';
 import type { FieldValues } from 'react-hook-form';
 
-type TextareaFieldProps<T extends FieldValues> = FormFieldProps<T> & {
+type TextareaFieldProps<T extends FieldValues, TTransformed extends FieldValues = T> = FormFieldProps<T, TTransformed> & {
   maxLength: number;
   rows?: number;
 };
 
-export function TextareaField<T extends FieldValues>({
+export function TextareaField<T extends FieldValues, TTransformed extends FieldValues = T>({
   control,
   name,
   label,
@@ -23,7 +23,7 @@ export function TextareaField<T extends FieldValues>({
   isRequired,
   maxLength,
   rows = 4,
-}: TextareaFieldProps<T>) {
+}: TextareaFieldProps<T, TTransformed>) {
   const {
     field: { ref, name: inputName, value: fieldValue, onChange, onBlur },
     fieldState,

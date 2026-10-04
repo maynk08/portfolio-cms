@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import type { FormFieldProps } from '@/components/forms/field-props';
 import type { FieldValues } from 'react-hook-form';
 
-type ListFieldProps<T extends FieldValues> = FormFieldProps<T> & {
+type ListFieldProps<T extends FieldValues, TTransformed extends FieldValues = T> = FormFieldProps<T, TTransformed> & {
   // Names one entry: "highlight" gives "Highlight 2", "Add highlight", "Move highlight 2 up".
   itemNoun: string;
   maxItems: number;
@@ -31,7 +31,7 @@ function createKey(): number {
 }
 
 // An ordered list of text lines (highlights, hero phrases): add, edit, remove and move entries up or down.
-export function ListField<T extends FieldValues>({
+export function ListField<T extends FieldValues, TTransformed extends FieldValues = T>({
   control,
   name,
   label,
@@ -40,7 +40,7 @@ export function ListField<T extends FieldValues>({
   itemNoun,
   maxItems,
   isMultiline = false,
-}: ListFieldProps<T>) {
+}: ListFieldProps<T, TTransformed>) {
   const {
     field: { ref, value: fieldValue, onChange, onBlur },
     fieldState,

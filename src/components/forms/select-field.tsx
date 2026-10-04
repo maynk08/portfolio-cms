@@ -9,12 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import type { FormFieldProps } from '@/components/forms/field-props';
 import type { FieldValues } from 'react-hook-form';
 
-type SelectFieldProps<T extends FieldValues> = FormFieldProps<T> & {
+type SelectFieldProps<T extends FieldValues, TTransformed extends FieldValues = T> = FormFieldProps<T, TTransformed> & {
   options: { value: string; label: string }[];
   placeholder?: string;
 };
 
-export function SelectField<T extends FieldValues>({
+export function SelectField<T extends FieldValues, TTransformed extends FieldValues = T>({
   control,
   name,
   label,
@@ -22,7 +22,7 @@ export function SelectField<T extends FieldValues>({
   isRequired,
   options,
   placeholder = 'Select…',
-}: SelectFieldProps<T>) {
+}: SelectFieldProps<T, TTransformed>) {
   const {
     field: { ref, name: inputName, value: fieldValue, onChange, onBlur },
     fieldState,

@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import type { FormFieldProps } from '@/components/forms/field-props';
 import type { FieldValues } from 'react-hook-form';
 
-type TagsFieldProps<T extends FieldValues> = FormFieldProps<T> & {
+type TagsFieldProps<T extends FieldValues, TTransformed extends FieldValues = T> = FormFieldProps<T, TTransformed> & {
   maxItems: number;
   placeholder?: string;
 };
@@ -20,7 +20,7 @@ type TagsFieldProps<T extends FieldValues> = FormFieldProps<T> & {
 const ADD_KEYS = new Set(['Enter', ',']);
 
 // Short values such as a tech stack: type one and press Enter (or a comma) to add it; duplicates are ignored.
-export function TagsField<T extends FieldValues>({
+export function TagsField<T extends FieldValues, TTransformed extends FieldValues = T>({
   control,
   name,
   label,
@@ -28,7 +28,7 @@ export function TagsField<T extends FieldValues>({
   isRequired,
   maxItems,
   placeholder,
-}: TagsFieldProps<T>) {
+}: TagsFieldProps<T, TTransformed>) {
   const {
     field: { ref, value: fieldValue, onChange, onBlur },
     fieldState,

@@ -9,14 +9,14 @@ import { Input } from '@/components/ui/input';
 import type { FormFieldProps } from '@/components/forms/field-props';
 import type { FieldValues } from 'react-hook-form';
 
-type TextFieldProps<T extends FieldValues> = FormFieldProps<T> & {
+type TextFieldProps<T extends FieldValues, TTransformed extends FieldValues = T> = FormFieldProps<T, TTransformed> & {
   type?: 'text' | 'email' | 'url';
   placeholder?: string;
   autoComplete?: string;
 };
 
 // Single-line text. An empty field holds '', which the form's schema turns into null for optional values.
-export function TextField<T extends FieldValues>({
+export function TextField<T extends FieldValues, TTransformed extends FieldValues = T>({
   control,
   name,
   label,
@@ -25,7 +25,7 @@ export function TextField<T extends FieldValues>({
   type = 'text',
   placeholder,
   autoComplete,
-}: TextFieldProps<T>) {
+}: TextFieldProps<T, TTransformed>) {
   const {
     field: { ref, name: inputName, value: fieldValue, onChange, onBlur },
     fieldState,

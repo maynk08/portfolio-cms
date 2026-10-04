@@ -14,6 +14,8 @@ export default defineConfig({
   },
   test: {
     include: ['tests/**/*.test.{ts,tsx}'],
+    // End-to-end tests run with Playwright (`npm run test:e2e`).
+    exclude: ['e2e/**', 'node_modules/**'],
     environment: 'node',
     setupFiles: ['./tests/setup.ts'],
     env: {
