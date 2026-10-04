@@ -6,16 +6,16 @@ import { unstable_rethrow } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 
+import { applyFieldErrors } from '@/components/forms/apply-field-errors';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { login } from '@/features/auth/actions';
 import { loginSchema } from '@/features/auth/schemas';
+import { GENERIC_ERROR_MESSAGE } from '@/lib/actions/action-result';
 
-import type { LoginFailure } from '@/features/auth/login-failure';
 import type { LoginInput } from '@/features/auth/schemas';
-
-const LOGIN_FIELDS = ['email', 'password'] as const;
+import type { ActionFailure } from '@/lib/actions/action-result';
 
 type LoginFormProps = {
   // Where to go after logging in; checked again on the server.
@@ -29,6 +29,7 @@ export function LoginForm({ next }: LoginFormProps) {
     register,
     handleSubmit,
     setError,
+    getValues,
     formState: { errors },
   } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -40,23 +41,16 @@ export function LoginForm({ next }: LoginFormProps) {
   const submit = (values: LoginInput): void => {
     // A transition keeps the form pending until the redirect after a successful login has finished.
     startTransition(async () => {
-      let failure: LoginFailure;
+      let failure: ActionFailure;
       try {
         failure = await login(values, next);
       } catch (error) {
         // A successful login ends in a redirect, which Next.js signals by throwing; let it through.
         unstable_rethrow(error);
-        setError('root.server', { message: 'Something went wrong while logging in. Try again.' });
+        setError('root.server', { message: GENERIC_ERROR_MESSAGE });
         return;
       }
-
-      const fieldsWithErrors = LOGIN_FIELDS.filter((field) => failure.fieldErrors?.[field] !== undefined);
-      fieldsWithErrors.forEach((field, index) => {
-        setError(field, { message: failure.fieldErrors?.[field] }, { shouldFocus: index === 0 });
-      });
-      if (failure.formError !== undefined) {
-        setError('root.server', { message: failure.formError });
-      }
+      applyFieldErrors({ getValues, setError }, failure);
     });
   };
 

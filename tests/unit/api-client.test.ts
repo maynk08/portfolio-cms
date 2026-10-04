@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
-import { apiRequest } from '@/lib/api/api-client';
+import { apiRequest, apiRequestAll, apiRequestPage } from '@/lib/api/api-client';
 import {
   ApiConflictError,
   ApiError,
@@ -208,5 +208,62 @@ describe('apiRequest', () => {
     const error = await expectRejection(apiRequest('/projects', { schema: itemSchema }), ApiResponseError);
 
     expect(error.status).toBe(500);
+  });
+
+  it('adds query values to the URL, leaving out empty ones', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(200, { success: true, data: null }));
+
+    await apiRequest('/messages', { schema: z.null(), query: { status: 'unread', page: 2, kind: undefined, search: null } });
+
+    expect(lastRequest().url).toBe('http://backend.test/api/admin/messages?status=unread&page=2');
+  });
+});
+
+describe('apiRequestPage', () => {
+  const pagination = { page: 2, pageSize: 20, totalItems: 41, totalPages: 3 };
+
+  it('returns validated items with the pagination details', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(200, { success: true, data: [{ id: 'a' }, { id: 'b' }], pagination }));
+
+    const page = await apiRequestPage('/experiences', { itemSchema, query: { page: 2 } });
+
+    expect(page).toEqual({ items: [{ id: 'a' }, { id: 'b' }], pagination });
+  });
+
+  it('rejects a response without pagination or with a bad item', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { success: true, data: [{ id: 'a' }] }));
+    await expectRejection(apiRequestPage('/experiences', { itemSchema }), ApiResponseError);
+
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, { success: true, data: [{ id: 1 }], pagination }));
+    await expectRejection(apiRequestPage('/experiences', { itemSchema }), ApiResponseError);
+  });
+});
+
+describe('apiRequestAll', () => {
+  it('loads every page at the largest page size', async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse(200, { success: true, data: [{ id: 'a' }], pagination: { page: 1, pageSize: 100, totalItems: 2, totalPages: 2 } }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse(200, { success: true, data: [{ id: 'b' }], pagination: { page: 2, pageSize: 100, totalItems: 2, totalPages: 2 } }),
+      );
+
+    const items = await apiRequestAll('/projects', { itemSchema });
+
+    expect(items).toEqual([{ id: 'a' }, { id: 'b' }]);
+    expect(fetchMock.mock.calls.map(([url]) => (url instanceof Request ? url.url : url.toString()))).toEqual([
+      'http://backend.test/api/admin/projects?page=1&pageSize=100',
+      'http://backend.test/api/admin/projects?page=2&pageSize=100',
+    ]);
+  });
+
+  it('makes one request for an empty list', async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse(200, { success: true, data: [], pagination: { page: 1, pageSize: 100, totalItems: 0, totalPages: 0 } }),
+    );
+
+    expect(await apiRequestAll('/projects', { itemSchema })).toEqual([]);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

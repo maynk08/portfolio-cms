@@ -5,7 +5,10 @@ import { ApiError, ApiRateLimitError, ApiUnauthorizedError, ApiUnavailableError,
 
 describe('toLoginFailure', () => {
   it('explains wrong credentials without saying which one is wrong', () => {
-    expect(toLoginFailure(new ApiUnauthorizedError('Invalid email or password'))).toEqual({ formError: 'Email or password is incorrect.' });
+    expect(toLoginFailure(new ApiUnauthorizedError('Invalid email or password'))).toEqual({
+      ok: false,
+      formError: 'Email or password is incorrect.',
+    });
   });
 
   it.each([
@@ -22,13 +25,11 @@ describe('toLoginFailure', () => {
       { field: 'email', message: 'Second message is ignored' },
     ]);
 
-    expect(toLoginFailure(error)).toEqual({ fieldErrors: { email: 'Enter a valid email address' } });
+    expect(toLoginFailure(error)).toEqual({ ok: false, fieldErrors: { email: 'Enter a valid email address' } });
   });
 
-  it('shows validation errors for unknown fields as a form error', () => {
-    expect(toLoginFailure(new ApiValidationError('Validation failed', [{ field: 'body', message: 'Bad' }]))).toEqual({
-      formError: 'Validation failed',
-    });
+  it('shows a validation error without field errors as a form error', () => {
+    expect(toLoginFailure(new ApiValidationError('Validation failed', []))).toEqual({ ok: false, formError: 'Validation failed' });
   });
 
   it('points at the backend when it cannot be reached', () => {
@@ -36,7 +37,7 @@ describe('toLoginFailure', () => {
   });
 
   it('gives a generic message for other API errors', () => {
-    expect(toLoginFailure(new ApiError(500, 'Internal server error')).formError).toBe('Something went wrong while logging in. Try again.');
+    expect(toLoginFailure(new ApiError(500, 'Internal server error')).formError).toBe('Something went wrong. Try again.');
   });
 
   it('rethrows errors that are not API errors', () => {

@@ -23,17 +23,46 @@ const REQUEST_TIMEOUT_MS = 10_000;
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
-export interface ApiRequestOptions<T> {
+type QueryValue = string | number | boolean | null | undefined;
+
+interface RequestOptions {
   method?: HttpMethod;
   body?: unknown;
-  // Validates the response's `data`; the backend is trusted to be up, not to be right.
-  schema: z.ZodType<T>;
+  // Added to the URL; `null` and `undefined` values are left out.
+  query?: Record<string, QueryValue>;
   // Sends the session token. A rejected or missing session redirects to the login page.
   isAuthenticated?: boolean;
   // When false, an authenticated call throws `ApiUnauthorizedError` instead of redirecting (the login page needs this).
   shouldRedirectOnUnauthorized?: boolean;
   headers?: Record<string, string>;
 }
+
+export interface ApiRequestOptions<T> extends RequestOptions {
+  // Validates the response's `data`; the backend is trusted to be up, not to be right.
+  schema: z.ZodType<T>;
+}
+
+export interface ApiPageOptions<T> extends Omit<RequestOptions, 'method' | 'body'> {
+  // Validates each item of the page.
+  itemSchema: z.ZodType<T>;
+}
+
+export const paginationSchema = z.object({
+  page: z.number().int(),
+  pageSize: z.number().int(),
+  totalItems: z.number().int(),
+  totalPages: z.number().int(),
+});
+
+export type Pagination = z.infer<typeof paginationSchema>;
+
+export interface ApiPage<T> {
+  items: T[];
+  pagination: Pagination;
+}
+
+// The backend's largest page; used to load complete lists.
+const MAX_PAGE_SIZE = 100;
 
 const errorEnvelopeSchema = z.object({
   success: z.literal(false),
@@ -43,6 +72,8 @@ const errorEnvelopeSchema = z.object({
 });
 
 const successEnvelopeSchema = z.object({ success: z.literal(true), data: z.unknown() });
+
+const paginatedEnvelopeSchema = z.object({ success: z.literal(true), data: z.array(z.unknown()), pagination: paginationSchema });
 
 function parseRetryAfter(value: string | null): number | null {
   const seconds = Number(value);
@@ -91,12 +122,19 @@ async function readJson(response: Response): Promise<unknown> {
   }
 }
 
-/**
- * The only way the CMS talks to the backend. Runs on the server, sends the session token as a bearer token,
- * never caches, and turns failures into typed errors.
- */
-export async function apiRequest<T>(path: string, options: ApiRequestOptions<T>): Promise<T> {
-  const { method = 'GET', body, schema, isAuthenticated = true, shouldRedirectOnUnauthorized = true } = options;
+function buildUrl(path: string, query: RequestOptions['query']): string {
+  const url = new URL(`${env.backendUrl}${ADMIN_API_PREFIX}${path}`);
+  for (const [name, value] of Object.entries(query ?? {})) {
+    if (value !== null && value !== undefined) {
+      url.searchParams.set(name, String(value));
+    }
+  }
+  return url.toString();
+}
+
+// Sends the request and returns the parsed body of a successful response; every failure becomes a typed error.
+async function requestJson(path: string, options: RequestOptions): Promise<{ body: unknown; status: number }> {
+  const { method = 'GET', body, query, isAuthenticated = true, shouldRedirectOnUnauthorized = true } = options;
 
   const headers: Record<string, string> = { Accept: 'application/json', 'X-Request-Id': crypto.randomUUID(), ...options.headers };
   if (body !== undefined) {
@@ -113,7 +151,7 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions<T>)
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await sendRequest(`${env.backendUrl}${ADMIN_API_PREFIX}${path}`, {
+  const response = await sendRequest(buildUrl(path, query), {
     method,
     headers,
     body: body === undefined ? undefined : JSON.stringify(body),
@@ -127,11 +165,44 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions<T>)
     }
     throw error;
   }
+  return { body: responseBody, status: response.status };
+}
 
-  const envelope = successEnvelopeSchema.safeParse(responseBody);
-  const data = envelope.success ? schema.safeParse(envelope.data.data) : null;
+/**
+ * The only way the CMS talks to the backend. Runs on the server, sends the session token as a bearer token,
+ * never caches, and turns failures into typed errors.
+ */
+export async function apiRequest<T>(path: string, options: ApiRequestOptions<T>): Promise<T> {
+  const { body, status } = await requestJson(path, options);
+
+  const envelope = successEnvelopeSchema.safeParse(body);
+  const data = envelope.success ? options.schema.safeParse(envelope.data.data) : null;
   if (data?.success !== true) {
-    throw new ApiResponseError(response.status, `Unexpected response from ${method} ${path}`, { cause: data?.error });
+    throw new ApiResponseError(status, `Unexpected response from ${options.method ?? 'GET'} ${path}`, { cause: data?.error });
   }
   return data.data;
+}
+
+// One page of a paginated list, with the pagination details.
+export async function apiRequestPage<T>(path: string, options: ApiPageOptions<T>): Promise<ApiPage<T>> {
+  const { body, status } = await requestJson(path, options);
+
+  const envelope = paginatedEnvelopeSchema.safeParse(body);
+  const items = envelope.success ? z.array(options.itemSchema).safeParse(envelope.data.data) : null;
+  if (!envelope.success || items?.success !== true) {
+    throw new ApiResponseError(status, `Unexpected response from GET ${path}`, { cause: items?.error ?? envelope.error });
+  }
+  return { items: items.data, pagination: envelope.data.pagination };
+}
+
+// Every item of a paginated list, for lists that are shown whole (manually ordered ones).
+export async function apiRequestAll<T>(path: string, options: ApiPageOptions<T>): Promise<T[]> {
+  const items: T[] = [];
+  for (let page = 1; ; page += 1) {
+    const result = await apiRequestPage(path, { ...options, query: { ...options.query, page, pageSize: MAX_PAGE_SIZE } });
+    items.push(...result.items);
+    if (page >= result.pagination.totalPages) {
+      return items;
+    }
+  }
 }

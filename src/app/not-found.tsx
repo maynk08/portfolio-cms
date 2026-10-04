@@ -1,5 +1,4 @@
-import Link from 'next/link';
-
+import { GuardedLink } from '@/components/navigation/guarded-link';
 import { Button } from '@/components/ui/button';
 
 import type { Metadata } from 'next';
@@ -13,7 +12,7 @@ export default function NotFound() {
       <h1 className="text-2xl font-semibold">Page not found</h1>
       <p className="text-sm text-muted-foreground">This page does not exist or has moved.</p>
       <Button asChild>
-        <Link href="/">Go to the dashboard</Link>
+        <GuardedLink href="/">Go to the dashboard</GuardedLink>
       </Button>
     </div>
   );

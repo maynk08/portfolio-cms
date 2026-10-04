@@ -1,9 +1,9 @@
 'use client';
 
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import { NAV_GROUPS, findNavLocation } from '@/components/layout/nav-items';
+import { GuardedLink } from '@/components/navigation/guarded-link';
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -29,7 +29,7 @@ export function NavMain() {
             return (
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
-                  <Link
+                  <GuardedLink
                     href={item.href}
                     aria-current={isActive ? 'page' : undefined}
                     onClick={() => {
@@ -39,7 +39,7 @@ export function NavMain() {
                   >
                     <item.icon />
                     <span>{item.title}</span>
-                  </Link>
+                  </GuardedLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             );

@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
+import { toValidationFailure } from '@/lib/actions/action-result';
 import { apiRequest } from '@/lib/api/api-client';
 import { ApiUnauthorizedError, ApiUnavailableError } from '@/lib/api/api-errors';
 import { loginPathFor } from '@/lib/session/login-paths';
@@ -13,14 +14,13 @@ import { toLoginFailure } from './login-failure';
 import { getSafeRedirectPath } from './safe-redirect';
 import { loginResultSchema, loginSchema } from './schemas';
 
-import type { LoginFailure } from './login-failure';
+import type { ActionFailure } from '@/lib/actions/action-result';
 
 // Returns what went wrong; on success it sets the session cookie and redirects, so it never returns.
-export async function login(values: unknown, next: unknown): Promise<LoginFailure> {
+export async function login(values: unknown, next: unknown): Promise<ActionFailure> {
   const input = loginSchema.safeParse(values);
   if (!input.success) {
-    const { fieldErrors } = z.flattenError(input.error);
-    return { fieldErrors: { email: fieldErrors.email?.[0], password: fieldErrors.password?.[0] } };
+    return toValidationFailure(input.error);
   }
 
   const clientIp = await getClientIp();

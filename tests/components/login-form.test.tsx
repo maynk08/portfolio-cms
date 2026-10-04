@@ -5,9 +5,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { LoginForm } from '@/features/auth/components/login-form';
 
-import type { LoginFailure } from '@/features/auth/login-failure';
+import type { ActionFailure } from '@/lib/actions/action-result';
 
-const { loginMock } = vi.hoisted(() => ({ loginMock: vi.fn<(values: unknown, next: unknown) => Promise<LoginFailure>>() }));
+const { loginMock } = vi.hoisted(() => ({ loginMock: vi.fn<(values: unknown, next: unknown) => Promise<ActionFailure>>() }));
 
 vi.mock('@/features/auth/actions', () => ({ login: loginMock }));
 
@@ -58,7 +58,7 @@ describe('LoginForm', () => {
   });
 
   it('sends the details and the return path, and stays disabled while logging in', async () => {
-    let finishLogin: (failure: LoginFailure) => void = () => undefined;
+    let finishLogin: (failure: ActionFailure) => void = () => undefined;
     loginMock.mockReturnValue(
       new Promise((resolve) => {
         finishLogin = resolve;
@@ -73,12 +73,12 @@ describe('LoginForm', () => {
     expect(loginMock).toHaveBeenCalledWith({ email: 'admin@example.com', password: 'correct horse battery' }, '/projects');
     expect(await screen.findByRole('button', { name: 'Logging in…' })).toBeDisabled();
 
-    finishLogin({ formError: 'Email or password is incorrect.' });
+    finishLogin({ ok: false, formError: 'Email or password is incorrect.' });
     expect(await screen.findByRole('button', { name: 'Log in' })).toBeEnabled();
   });
 
   it('shows a failed login as an alert', async () => {
-    loginMock.mockResolvedValue({ formError: 'Email or password is incorrect.' });
+    loginMock.mockResolvedValue({ ok: false, formError: 'Email or password is incorrect.' });
     const { user, email, password, submit } = renderForm();
 
     await user.type(email, 'admin@example.com');
@@ -90,7 +90,7 @@ describe('LoginForm', () => {
   });
 
   it('puts server field errors next to the field and focuses it', async () => {
-    loginMock.mockResolvedValue({ fieldErrors: { password: 'Password must be at most 72 bytes' } });
+    loginMock.mockResolvedValue({ ok: false, fieldErrors: { password: 'Password must be at most 72 bytes' } });
     const { user, email, password, submit } = renderForm();
 
     await user.type(email, 'admin@example.com');
@@ -110,7 +110,7 @@ describe('LoginForm', () => {
     await user.type(password, 'secret');
     await user.click(submit);
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Something went wrong while logging in. Try again.');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Something went wrong. Try again.');
   });
 
   it('shows and hides the password', async () => {
