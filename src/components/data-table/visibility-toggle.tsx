@@ -1,9 +1,6 @@
 'use client';
 
-import { useOptimistic, useTransition } from 'react';
-
-import { notifyResult } from '@/components/feedback/notify';
-import { Switch } from '@/components/ui/switch';
+import { InstantSwitch } from '@/components/data-table/instant-switch';
 
 import type { ActionResult } from '@/lib/actions/action-result';
 
@@ -14,22 +11,7 @@ type VisibilityToggleProps = {
   onChange: (isVisible: boolean) => Promise<ActionResult<unknown>>;
 };
 
-// Reversible, so it saves at once without confirmation; the switch moves immediately and snaps back if saving fails.
+// The show/hide switch of every content list.
 export function VisibilityToggle({ isVisible, itemLabel, onChange }: VisibilityToggleProps) {
-  const [isPending, startTransition] = useTransition();
-  const [shownVisible, setShownVisible] = useOptimistic(isVisible);
-
-  return (
-    <Switch
-      checked={shownVisible}
-      aria-label={`Show "${itemLabel}" on the portfolio`}
-      aria-busy={isPending}
-      onCheckedChange={(checked) => {
-        startTransition(async () => {
-          setShownVisible(checked);
-          notifyResult(await onChange(checked));
-        });
-      }}
-    />
-  );
+  return <InstantSwitch checked={isVisible} label={`Show "${itemLabel}" on the portfolio`} onChange={onChange} />;
 }

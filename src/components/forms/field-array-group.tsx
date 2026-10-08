@@ -107,6 +107,11 @@ export function FieldArrayGroup<T extends FieldValues, TName extends ArrayPath<T
           variant="outline"
           size="sm"
           disabled={fields.length >= maxItems}
+          // Keeps focus (and so blur validation) where it is until the click lands: an error appearing on blur
+          // would otherwise push this button down between mousedown and mouseup and swallow the click.
+          onMouseDown={(event) => {
+            event.preventDefault();
+          }}
           onClick={() => {
             append(createItem());
           }}

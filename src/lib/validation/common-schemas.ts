@@ -34,3 +34,27 @@ export const optionalEmailSchema = z
   .transform((value) => (value === '' ? null : value.toLowerCase()));
 
 export { EMAIL_EXAMPLE };
+
+export const OBJECT_ID_PATTERN = /^[a-f\d]{24}$/i;
+
+export const objectIdSchema = z.string().regex(OBJECT_ID_PATTERN);
+
+const YEAR_MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
+
+export const yearMonthSchema = z.string().regex(YEAR_MONTH_PATTERN);
+
+// Optional http(s) URL: an empty field is saved as null.
+export const optionalUrlSchema = z
+  .string()
+  .trim()
+  .max(TEXT_LIMITS.url, maxLengthMessage(TEXT_LIMITS.url))
+  .refine((value) => value === '' || isHttpUrl(value), URL_MESSAGE)
+  .transform((value) => (value === '' ? null : value));
+
+// A list of short texts, each required: an empty entry has to be filled in or removed.
+export function textListSchema(options: { maxItems: number; maxLength: number; emptyMessage: string; tooManyMessage: string }) {
+  return z.array(requiredText(options.maxLength, options.emptyMessage)).max(options.maxItems, options.tooManyMessage);
+}
+
+// Media references are chosen in the media library (C5); until then forms carry them through unchanged.
+export const mediaIdSchema = z.string().nullable();

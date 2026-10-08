@@ -174,6 +174,11 @@ export function ListField<T extends FieldValues, TTransformed extends FieldValue
           variant="outline"
           size="sm"
           disabled={items.length >= maxItems}
+          // Keeps focus (and so blur validation) where it is until the click lands: an error appearing on blur
+          // would otherwise push this button down between mousedown and mouseup and swallow the click.
+          onMouseDown={(event) => {
+            event.preventDefault();
+          }}
           onClick={() => {
             const key = createKey();
             focusKeyAfterRender.current = key;

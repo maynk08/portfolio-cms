@@ -5,6 +5,7 @@ import { FieldArrayGroup } from '@/components/forms/field-array-group';
 import { FormSection } from '@/components/forms/form-section';
 import { ListField } from '@/components/forms/list-field';
 import { MarkdownField } from '@/components/forms/markdown-field';
+import { MediaNote } from '@/components/forms/media-note';
 import { NumberField } from '@/components/forms/number-field';
 import { SwitchField } from '@/components/forms/switch-field';
 import { TextField } from '@/components/forms/text-field';
@@ -44,15 +45,12 @@ export function ProfileForm({ initialValues }: ProfileFormProps) {
       </FormSection>
 
       <FormSection title="Photo and résumé">
-        <dl className="grid gap-2 text-sm sm:grid-cols-[8rem_1fr]">
-          <dt className="text-muted-foreground">Photo</dt>
-          <dd>{initialValues.photo === null ? 'None yet' : 'Set'}</dd>
-          <dt className="text-muted-foreground">Résumé</dt>
-          <dd>{initialValues.resume === null ? 'None yet' : 'Set'}</dd>
-        </dl>
-        <p className="text-sm text-muted-foreground">
-          Choosing a photo and a résumé PDF comes with the media library. Saving this form keeps the current ones.
-        </p>
+        <MediaNote
+          items={[
+            { label: 'Photo', isSet: initialValues.photo !== null },
+            { label: 'Résumé (PDF)', isSet: initialValues.resume !== null },
+          ]}
+        />
       </FormSection>
 
       <FormSection title="Social links" description="Shown in the hero and the contact section, in this order.">

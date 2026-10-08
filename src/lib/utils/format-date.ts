@@ -44,3 +44,8 @@ export function formatTimestamp(value: string | Date, timeZone?: string): string
     timeZone,
   }).format(new Date(value));
 }
+
+// The current calendar month as `YYYY-MM`, for comparing with stored months.
+export function currentYearMonth(now = new Date()): string {
+  return toYearMonth({ year: now.getFullYear(), month: now.getMonth() + 1 });
+}
