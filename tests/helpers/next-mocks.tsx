@@ -14,16 +14,19 @@ export function resetNavigationMocks(): void {
 
 type MockLinkProps = React.ComponentProps<'a'> & {
   href: string;
+  scroll?: boolean;
   onNavigate?: (event: { preventDefault: () => void }) => void;
 };
 
 // Behaves like `next/link` for tests: calls `onNavigate`, and navigates through the router unless it was prevented.
-export function MockLink({ href, onNavigate, children, ...props }: MockLinkProps) {
+// Like the real link it runs the caller's `onClick` first; `scroll` only matters to Next.js and is dropped.
+export function MockLink({ href, onNavigate, onClick, scroll: _scroll, children, ...props }: MockLinkProps) {
   return (
     <a
       href={href}
       {...props}
       onClick={(event) => {
+        onClick?.(event);
         event.preventDefault();
         const navigation = { isPrevented: false };
         onNavigate?.({

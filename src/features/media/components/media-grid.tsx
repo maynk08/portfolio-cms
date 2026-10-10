@@ -2,29 +2,18 @@
 
 import { EyeOffIcon, ImageOffIcon } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
 
 import { Badge } from '@/components/ui/badge';
 import { MediaThumbnail } from '@/features/media/components/media-thumbnail';
 import { MEDIA_TYPES, isMediaMimeType, mediaKindOf } from '@/features/media/schemas';
+import { useQueryParamHref } from '@/hooks/use-query-param-href';
 import { formatFileSize } from '@/lib/utils/format-file-size';
 
 import type { Media } from '@/features/media/schemas';
 
 // Opens the details sheet through the URL (`?file=<id>`), keeping the current filter and page.
 export function useFileHref(): (id: string | null) => string {
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  return (id) => {
-    const params = new URLSearchParams(searchParams);
-    if (id === null) {
-      params.delete('file');
-    } else {
-      params.set('file', id);
-    }
-    const query = params.toString();
-    return query === '' ? pathname : `${pathname}?${query}`;
-  };
+  return useQueryParamHref('file');
 }
 
 export function MediaGrid({ items }: { items: Media[] }) {

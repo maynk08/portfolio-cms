@@ -9,12 +9,18 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar';
 
-export function NavMain() {
+type NavMainProps = {
+  // Small counters next to nav items, keyed by href, such as unread messages.
+  badges?: Record<string, number>;
+};
+
+export function NavMain({ badges = {} }: NavMainProps) {
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
   const activeHref = findNavLocation(pathname)?.item.href;
@@ -39,8 +45,10 @@ export function NavMain() {
                   >
                     <item.icon />
                     <span>{item.title}</span>
+                    {(badges[item.href] ?? 0) > 0 && <span className="sr-only">({badges[item.href]} unread)</span>}
                   </GuardedLink>
                 </SidebarMenuButton>
+                {(badges[item.href] ?? 0) > 0 && <SidebarMenuBadge aria-hidden>{badges[item.href]}</SidebarMenuBadge>}
               </SidebarMenuItem>
             );
           })}
