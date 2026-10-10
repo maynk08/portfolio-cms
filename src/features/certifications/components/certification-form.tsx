@@ -5,14 +5,15 @@ import { useRouter } from 'next/navigation';
 import { ActionForm } from '@/components/forms/action-form';
 import { DateRangeFields } from '@/components/forms/date-range-fields';
 import { FormSection } from '@/components/forms/form-section';
-import { MediaNote } from '@/components/forms/media-note';
 import { SwitchField } from '@/components/forms/switch-field';
 import { TextField } from '@/components/forms/text-field';
 import { useActionForm } from '@/components/forms/use-action-form';
 import { createCertification, updateCertification } from '@/features/certifications/actions';
 import { certificationFormSchema } from '@/features/certifications/schemas';
+import { MediaField } from '@/features/media/components/media-field';
 
 import type { CertificationFormValues } from '@/features/certifications/schemas';
+import type { Media } from '@/features/media/schemas';
 
 const LIST_HREF = '/certifications';
 
@@ -20,9 +21,11 @@ type CertificationFormProps = {
   // Absent when creating.
   id?: string;
   initialValues: CertificationFormValues;
+  // Files the item already refers to, for their previews.
+  knownMedia: Record<string, Media>;
 };
 
-export function CertificationForm({ id, initialValues }: CertificationFormProps) {
+export function CertificationForm({ id, initialValues, knownMedia }: CertificationFormProps) {
   const router = useRouter();
   const actionForm = useActionForm({
     schema: certificationFormSchema,
@@ -52,7 +55,14 @@ export function CertificationForm({ id, initialValues }: CertificationFormProps)
         <DateRangeFields control={control} startLabel="Issued" endLabel="Expires" ongoingLabel="Does not expire" />
       </FormSection>
       <FormSection title="Badge">
-        <MediaNote items={[{ label: 'Badge image', isSet: initialValues.badge !== null }]} />
+        <MediaField
+          control={control}
+          name="badge"
+          label="Badge"
+          kind="image"
+          knownMedia={knownMedia}
+          description="The certificate’s badge image."
+        />
       </FormSection>
       <FormSection title="Visibility">
         <SwitchField control={control} name="isVisible" label="Show this certificate on the portfolio" />

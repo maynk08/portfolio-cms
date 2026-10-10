@@ -73,14 +73,21 @@ export function toActionFailure(error: unknown): ActionFailure {
  * Runs a backend write and reports it in the standard shape. On success it refreshes the current page in the same
  * response (`refresh()`), so lists and optimistic switches show the saved state without a second request.
  */
-export async function runAction<T>(operation: () => Promise<T>, successMessage: string | ((data: T) => string)): Promise<ActionResult<T>> {
+export async function runAction<T>(
+  operation: () => Promise<T>,
+  successMessage: string | ((data: T) => string),
+  // Off for steps that change nothing on screen, such as asking for an upload form.
+  options: { shouldRefresh?: boolean } = {},
+): Promise<ActionResult<T>> {
   let data: T;
   try {
     data = await operation();
   } catch (error) {
     return toActionFailure(error);
   }
-  refresh();
+  if (options.shouldRefresh ?? true) {
+    refresh();
+  }
   return { ok: true, message: typeof successMessage === 'string' ? successMessage : successMessage(data), data };
 }
 

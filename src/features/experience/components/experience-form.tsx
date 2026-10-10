@@ -6,7 +6,6 @@ import { ActionForm } from '@/components/forms/action-form';
 import { DateRangeFields } from '@/components/forms/date-range-fields';
 import { FormSection } from '@/components/forms/form-section';
 import { ListField } from '@/components/forms/list-field';
-import { MediaNote } from '@/components/forms/media-note';
 import { SwitchField } from '@/components/forms/switch-field';
 import { TagsField } from '@/components/forms/tags-field';
 import { TextField } from '@/components/forms/text-field';
@@ -14,9 +13,11 @@ import { TextareaField } from '@/components/forms/textarea-field';
 import { useActionForm } from '@/components/forms/use-action-form';
 import { createExperience, updateExperience } from '@/features/experience/actions';
 import { EXPERIENCE_LIMITS, experienceFormSchema } from '@/features/experience/schemas';
+import { MediaField } from '@/features/media/components/media-field';
 import { TEXT_LIMITS } from '@/lib/validation/text-limits';
 
 import type { ExperienceFormValues } from '@/features/experience/schemas';
+import type { Media } from '@/features/media/schemas';
 
 const LIST_HREF = '/experience';
 
@@ -24,9 +25,11 @@ type ExperienceFormProps = {
   // Absent when creating.
   id?: string;
   initialValues: ExperienceFormValues;
+  // Files the item already refers to, for their previews.
+  knownMedia: Record<string, Media>;
 };
 
-export function ExperienceForm({ id, initialValues }: ExperienceFormProps) {
+export function ExperienceForm({ id, initialValues, knownMedia }: ExperienceFormProps) {
   const router = useRouter();
   const actionForm = useActionForm({
     schema: experienceFormSchema,
@@ -69,7 +72,14 @@ export function ExperienceForm({ id, initialValues }: ExperienceFormProps) {
         <TagsField control={control} name="techStack" label="Tech stack" maxItems={EXPERIENCE_LIMITS.techStack} placeholder="TypeScript" />
       </FormSection>
       <FormSection title="Logo">
-        <MediaNote items={[{ label: 'Company logo', isSet: initialValues.companyLogo !== null }]} />
+        <MediaField
+          control={control}
+          name="companyLogo"
+          label="Company logo"
+          kind="image"
+          knownMedia={knownMedia}
+          description="Shown next to the job."
+        />
       </FormSection>
       <FormSection title="Visibility">
         <SwitchField control={control} name="isVisible" label="Show this job on the portfolio" />

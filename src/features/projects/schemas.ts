@@ -4,7 +4,7 @@ import { mediaIdSchema, optionalText, optionalUrlSchema, requiredText } from '@/
 import { TEXT_LIMITS, maxLengthMessage } from '@/lib/validation/text-limits';
 
 export const PROJECTS_PATH = '/projects';
-export const PROJECT_LIMITS = { techStack: 30, slugLength: 80 } as const;
+export const PROJECT_LIMITS = { techStack: 30, slugLength: 80, gallery: 20 } as const;
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const SLUG_MESSAGE = 'Use lowercase letters, numbers and single hyphens, like my-project';
@@ -50,7 +50,7 @@ export function projectFormSchema(mode: 'create' | 'edit') {
     liveUrl: optionalUrlSchema,
     repoUrl: optionalUrlSchema,
     coverImage: mediaIdSchema,
-    gallery: z.array(z.string()),
+    gallery: z.array(z.string()).max(PROJECT_LIMITS.gallery, `Add at most ${PROJECT_LIMITS.gallery} images`),
     isFeatured: z.boolean(),
     isVisible: z.boolean(),
   });

@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-import { e2eConfig } from './e2e/e2e-config';
+import { e2eConfig, fixtureBaseUrl } from './e2e/e2e-config';
 
 const cmsUrl = `http://localhost:${e2eConfig.cmsPort}`;
 const backendUrl = `http://localhost:${e2eConfig.backendPort}`;
@@ -21,6 +21,13 @@ export default defineConfig({
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: [
     {
+      name: 'fixtures',
+      command: 'npx tsx e2e/fixture-server.ts',
+      url: `${fixtureBaseUrl}/health`,
+      reuseExistingServer: false,
+      timeout: 30_000,
+    },
+    {
       name: 'backend',
       command: 'npx tsx e2e/start-backend.ts',
       url: `${backendUrl}/health`,
@@ -31,7 +38,13 @@ export default defineConfig({
       name: 'cms',
       command: `npx next build && npx next start --port ${e2eConfig.cmsPort}`,
       url: `${cmsUrl}/login`,
-      env: { BACKEND_URL: backendUrl, PORTFOLIO_URL: 'http://localhost:3000' },
+      // The test images come from the local fixture server, which only this build is allowed to use.
+      env: {
+        BACKEND_URL: backendUrl,
+        PORTFOLIO_URL: 'http://localhost:3000',
+        MEDIA_PUBLIC_BASE_URL: fixtureBaseUrl,
+        MEDIA_ALLOW_LOCAL_IMAGES: 'true',
+      },
       reuseExistingServer: false,
       timeout: 180_000,
     },

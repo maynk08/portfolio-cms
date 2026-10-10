@@ -75,7 +75,10 @@ describe('reordering projects', () => {
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith('Can’t reach the server.');
     });
-    expect(titlesInOrder()).toEqual(['Alpha/projects/alpha', 'Beta/projects/beta', 'Gamma/projects/gamma']);
+    // The toast is shown inside the transition, a moment before React puts the row back.
+    await waitFor(() => {
+      expect(titlesInOrder()).toEqual(['Alpha/projects/alpha', 'Beta/projects/beta', 'Gamma/projects/gamma']);
+    });
   });
 
   it('cannot move the first row up or the last row down, and says why', () => {
@@ -88,7 +91,7 @@ describe('reordering projects', () => {
 
 describe('ongoing dates', () => {
   it('hides the end month while "I currently work here" is ticked', async () => {
-    const { user } = renderWithProviders(<ExperienceForm initialValues={EMPTY_EXPERIENCE} />);
+    const { user } = renderWithProviders(<ExperienceForm initialValues={EMPTY_EXPERIENCE} knownMedia={{}} />);
     expect(screen.getByRole('button', { name: /^Left/ })).toBeInTheDocument();
 
     await user.click(screen.getByRole('checkbox', { name: 'I currently work here' }));
@@ -98,7 +101,9 @@ describe('ongoing dates', () => {
 
   it('returns to the list after creating', async () => {
     vi.mocked(createExperience).mockResolvedValue({ ok: true, message: 'Experience "Engineer at Acme" created', data: { id: 'x' } });
-    const { user } = renderWithProviders(<ExperienceForm initialValues={{ ...EMPTY_EXPERIENCE, startDate: '2022-03', isOngoing: true }} />);
+    const { user } = renderWithProviders(
+      <ExperienceForm initialValues={{ ...EMPTY_EXPERIENCE, startDate: '2022-03', isOngoing: true }} knownMedia={{}} />,
+    );
 
     await user.type(screen.getByLabelText(/^Role/), 'Engineer');
     await user.type(screen.getByRole('textbox', { name: /^Company\b(?! website)/ }), 'Acme');

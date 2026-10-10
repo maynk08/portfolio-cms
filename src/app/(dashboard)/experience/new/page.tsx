@@ -10,7 +10,7 @@ export default function NewExperiencePage() {
   return (
     <>
       <PageHeader title="New experience" />
-      <ExperienceForm initialValues={EMPTY_EXPERIENCE} />
+      <ExperienceForm initialValues={EMPTY_EXPERIENCE} knownMedia={{}} />
     </>
   );
 }

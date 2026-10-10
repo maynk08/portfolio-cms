@@ -99,7 +99,7 @@ function toApiError(response: Response, body: unknown): ApiError {
     case 429:
       return new ApiRateLimitError(message, parseRetryAfter(response.headers.get('Retry-After')));
     case 503:
-      return new ApiUnavailableError(message);
+      return new ApiUnavailableError(message, { isReportedByBackend: true });
     default:
       return new ApiError(response.status, message);
   }

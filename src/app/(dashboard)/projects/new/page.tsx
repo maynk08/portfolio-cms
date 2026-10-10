@@ -10,7 +10,7 @@ export default function NewProjectPage() {
   return (
     <>
       <PageHeader title="New project" />
-      <ProjectForm initialValues={EMPTY_PROJECT} />
+      <ProjectForm initialValues={EMPTY_PROJECT} knownMedia={{}} />
     </>
   );
 }

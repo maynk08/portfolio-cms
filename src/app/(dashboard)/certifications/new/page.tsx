@@ -10,7 +10,7 @@ export default function NewCertificationPage() {
   return (
     <>
       <PageHeader title="New certification" />
-      <CertificationForm initialValues={EMPTY_CERTIFICATION} />
+      <CertificationForm initialValues={EMPTY_CERTIFICATION} knownMedia={{}} />
     </>
   );
 }

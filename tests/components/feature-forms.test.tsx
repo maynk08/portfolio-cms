@@ -48,7 +48,7 @@ beforeEach(() => {
 
 describe('ProfileForm', () => {
   it('asks for an email address or a URL depending on the platform, and a label only for "Other"', async () => {
-    const { user } = renderWithProviders(<ProfileForm initialValues={toProfileFormValues(profile)} />);
+    const { user } = renderWithProviders(<ProfileForm initialValues={toProfileFormValues(profile)} knownMedia={{}} />);
 
     await user.click(screen.getByRole('button', { name: 'Add social link' }));
     const link = screen.getByRole('listitem', { name: 'Social link 1' });
@@ -65,7 +65,7 @@ describe('ProfileForm', () => {
   });
 
   it('discards unsaved changes only after confirming, and only when there are some', async () => {
-    const { user } = renderWithProviders(<ProfileForm initialValues={toProfileFormValues(profile)} />);
+    const { user } = renderWithProviders(<ProfileForm initialValues={toProfileFormValues(profile)} knownMedia={{}} />);
     const discard = screen.getByRole('button', { name: 'Discard changes' });
     expect(discard).toBeDisabled();
 

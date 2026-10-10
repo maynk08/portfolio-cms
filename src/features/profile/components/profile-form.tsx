@@ -5,23 +5,26 @@ import { FieldArrayGroup } from '@/components/forms/field-array-group';
 import { FormSection } from '@/components/forms/form-section';
 import { ListField } from '@/components/forms/list-field';
 import { MarkdownField } from '@/components/forms/markdown-field';
-import { MediaNote } from '@/components/forms/media-note';
 import { NumberField } from '@/components/forms/number-field';
 import { SwitchField } from '@/components/forms/switch-field';
 import { TextField } from '@/components/forms/text-field';
 import { useActionForm } from '@/components/forms/use-action-form';
+import { MediaField } from '@/features/media/components/media-field';
 import { saveProfile } from '@/features/profile/actions';
 import { SocialLinkFields } from '@/features/profile/components/social-link-fields';
 import { PROFILE_LIMITS, emptyLanguage, emptySocialLink, profileFormSchema } from '@/features/profile/schemas';
 import { TEXT_LIMITS } from '@/lib/validation/text-limits';
 
+import type { Media } from '@/features/media/schemas';
 import type { ProfileFormValues } from '@/features/profile/schemas';
 
 type ProfileFormProps = {
   initialValues: ProfileFormValues;
+  // The photo and résumé the profile refers to, for their previews.
+  knownMedia: Record<string, Media>;
 };
 
-export function ProfileForm({ initialValues }: ProfileFormProps) {
+export function ProfileForm({ initialValues, knownMedia }: ProfileFormProps) {
   const actionForm = useActionForm({ schema: profileFormSchema, defaultValues: initialValues, action: saveProfile });
   const { control } = actionForm.form;
 
@@ -45,12 +48,24 @@ export function ProfileForm({ initialValues }: ProfileFormProps) {
       </FormSection>
 
       <FormSection title="Photo and résumé">
-        <MediaNote
-          items={[
-            { label: 'Photo', isSet: initialValues.photo !== null },
-            { label: 'Résumé (PDF)', isSet: initialValues.resume !== null },
-          ]}
-        />
+        <div className="grid gap-6 md:grid-cols-2">
+          <MediaField
+            control={control}
+            name="photo"
+            label="Photo"
+            kind="image"
+            knownMedia={knownMedia}
+            description="Shown in the About section."
+          />
+          <MediaField
+            control={control}
+            name="resume"
+            label="Résumé (PDF)"
+            kind="document"
+            knownMedia={knownMedia}
+            description="Opened by the résumé button."
+          />
+        </div>
       </FormSection>
 
       <FormSection title="Social links" description="Shown in the hero and the contact section, in this order.">

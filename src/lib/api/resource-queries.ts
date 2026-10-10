@@ -31,8 +31,10 @@ export async function getResourcePage<T>(
   path: string,
   itemSchema: z.ZodType<T>,
   list: { params: ListParams; pathname: string; searchParams: Record<string, string | string[] | undefined> },
+  // Filters passed on to the backend, such as `{ kind: 'image' }`.
+  filters: Record<string, string | undefined> = {},
 ): Promise<ApiPage<T>> {
-  const page = await apiRequestPage(path, { itemSchema, query: { page: list.params.page, pageSize: list.params.pageSize } });
+  const page = await apiRequestPage(path, { itemSchema, query: { ...filters, page: list.params.page, pageSize: list.params.pageSize } });
   const outOfRangeHref = getOutOfRangeHref(list.pathname, list.searchParams, page.pagination);
   if (outOfRangeHref !== null) {
     redirect(outOfRangeHref);

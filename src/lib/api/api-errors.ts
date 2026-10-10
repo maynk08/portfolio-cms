@@ -54,10 +54,14 @@ export class ApiRateLimitError extends ApiError {
   }
 }
 
-// The backend could not be reached, timed out, or reported that a dependency is down.
+// The backend could not be reached or timed out, or it answered 503 because a dependency is not available.
 export class ApiUnavailableError extends ApiError {
-  constructor(message = 'The server could not be reached', options?: { cause?: unknown }) {
+  // True when the backend itself answered 503 (it is up, but something it needs, such as file storage, is not set up).
+  readonly isReportedByBackend: boolean;
+
+  constructor(message = 'The server could not be reached', options?: { cause?: unknown; isReportedByBackend?: boolean }) {
     super(503, message, options);
+    this.isReportedByBackend = options?.isReportedByBackend ?? false;
   }
 }
 

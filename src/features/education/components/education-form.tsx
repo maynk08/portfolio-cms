@@ -5,16 +5,17 @@ import { useRouter } from 'next/navigation';
 import { ActionForm } from '@/components/forms/action-form';
 import { DateRangeFields } from '@/components/forms/date-range-fields';
 import { FormSection } from '@/components/forms/form-section';
-import { MediaNote } from '@/components/forms/media-note';
 import { SwitchField } from '@/components/forms/switch-field';
 import { TextField } from '@/components/forms/text-field';
 import { TextareaField } from '@/components/forms/textarea-field';
 import { useActionForm } from '@/components/forms/use-action-form';
 import { createEducation, updateEducation } from '@/features/education/actions';
 import { educationFormSchema } from '@/features/education/schemas';
+import { MediaField } from '@/features/media/components/media-field';
 import { TEXT_LIMITS } from '@/lib/validation/text-limits';
 
 import type { EducationFormValues } from '@/features/education/schemas';
+import type { Media } from '@/features/media/schemas';
 
 const LIST_HREF = '/education';
 
@@ -22,9 +23,11 @@ type EducationFormProps = {
   // Absent when creating.
   id?: string;
   initialValues: EducationFormValues;
+  // Files the item already refers to, for their previews.
+  knownMedia: Record<string, Media>;
 };
 
-export function EducationForm({ id, initialValues }: EducationFormProps) {
+export function EducationForm({ id, initialValues, knownMedia }: EducationFormProps) {
   const router = useRouter();
   const actionForm = useActionForm({
     schema: educationFormSchema,
@@ -55,7 +58,14 @@ export function EducationForm({ id, initialValues }: EducationFormProps) {
         <TextareaField control={control} name="description" label="Description" maxLength={TEXT_LIMITS.summary} rows={3} />
       </FormSection>
       <FormSection title="Logo">
-        <MediaNote items={[{ label: 'Logo', isSet: initialValues.logo !== null }]} />
+        <MediaField
+          control={control}
+          name="logo"
+          label="Logo"
+          kind="image"
+          knownMedia={knownMedia}
+          description="The school’s or university’s logo."
+        />
       </FormSection>
       <FormSection title="Visibility">
         <SwitchField control={control} name="isVisible" label="Show this entry on the portfolio" />

@@ -1,4 +1,5 @@
 import { PageHeader } from '@/components/layout/page-header';
+import { getMediaByIds } from '@/features/media/queries';
 import { ProjectForm } from '@/features/projects/components/project-form';
 import { getProject } from '@/features/projects/queries';
 import { toProjectFormValues } from '@/features/projects/schemas';
@@ -12,11 +13,12 @@ export async function generateMetadata({ params }: PageProps<'/projects/[id]'>):
 export default async function EditProjectPage({ params }: PageProps<'/projects/[id]'>) {
   const { id } = await params;
   const project = await getProject(id);
+  const knownMedia = await getMediaByIds([project.coverImage, ...project.gallery]);
 
   return (
     <>
       <PageHeader title={project.title} />
-      <ProjectForm key={id} id={id} initialValues={toProjectFormValues(project)} />
+      <ProjectForm key={id} id={id} initialValues={toProjectFormValues(project)} knownMedia={knownMedia} />
     </>
   );
 }

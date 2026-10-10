@@ -10,7 +10,7 @@ export default function NewEducationPage() {
   return (
     <>
       <PageHeader title="New education" />
-      <EducationForm initialValues={EMPTY_EDUCATION} />
+      <EducationForm initialValues={EMPTY_EDUCATION} knownMedia={{}} />
     </>
   );
 }

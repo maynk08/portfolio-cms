@@ -5,16 +5,18 @@ import { useRouter } from 'next/navigation';
 import { ActionForm } from '@/components/forms/action-form';
 import { FormSection } from '@/components/forms/form-section';
 import { MarkdownField } from '@/components/forms/markdown-field';
-import { MediaNote } from '@/components/forms/media-note';
 import { SwitchField } from '@/components/forms/switch-field';
 import { TagsField } from '@/components/forms/tags-field';
 import { TextField } from '@/components/forms/text-field';
 import { TextareaField } from '@/components/forms/textarea-field';
 import { useActionForm } from '@/components/forms/use-action-form';
+import { MediaField } from '@/features/media/components/media-field';
+import { MediaGalleryField } from '@/features/media/components/media-gallery-field';
 import { createProject, updateProject } from '@/features/projects/actions';
 import { PROJECT_LIMITS, projectFormSchema } from '@/features/projects/schemas';
 import { TEXT_LIMITS } from '@/lib/validation/text-limits';
 
+import type { Media } from '@/features/media/schemas';
 import type { ProjectFormValues } from '@/features/projects/schemas';
 
 const LIST_HREF = '/projects';
@@ -23,9 +25,11 @@ type ProjectFormProps = {
   // Absent when creating.
   id?: string;
   initialValues: ProjectFormValues;
+  // Files the project already refers to, for their previews.
+  knownMedia: Record<string, Media>;
 };
 
-export function ProjectForm({ id, initialValues }: ProjectFormProps) {
+export function ProjectForm({ id, initialValues, knownMedia }: ProjectFormProps) {
   const router = useRouter();
   const isCreating = id === undefined;
   const actionForm = useActionForm({
@@ -79,11 +83,21 @@ export function ProjectForm({ id, initialValues }: ProjectFormProps) {
         </div>
       </FormSection>
       <FormSection title="Images">
-        <MediaNote
-          items={[
-            { label: 'Cover image', isSet: initialValues.coverImage !== null },
-            { label: 'Gallery', isSet: initialValues.gallery.length > 0 },
-          ]}
+        <MediaField
+          control={control}
+          name="coverImage"
+          label="Cover image"
+          kind="image"
+          knownMedia={knownMedia}
+          description="Shown on the project card."
+        />
+        <MediaGalleryField
+          control={control}
+          name="gallery"
+          label="Gallery"
+          description="Screenshots on the project page, in this order."
+          maxItems={PROJECT_LIMITS.gallery}
+          knownMedia={knownMedia}
         />
       </FormSection>
       <FormSection title="Visibility">
