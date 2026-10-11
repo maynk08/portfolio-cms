@@ -36,7 +36,7 @@ const columns: DataTableColumn<Experience>[] = [
   },
   {
     id: 'visible',
-    header: 'Show on portfolio',
+    header: 'Visible',
     cell: (experience) => (
       <VisibilityToggle
         isVisible={experience.isVisible}

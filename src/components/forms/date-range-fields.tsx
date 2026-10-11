@@ -33,7 +33,7 @@ export function DateRangeFields<T extends FieldValues & DateRangeValues, TTransf
     <div className="flex flex-col gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <MonthField control={control} name={startName} label={startLabel} isRequired />
-        {!isOngoing && <MonthField control={control} name={endName} label={endLabel} isRequired />}
+        {!isOngoing && <MonthField control={control} name={endName} label={endLabel} isRequired openNear={startName} />}
       </div>
       <CheckboxField control={control} name={ongoingName} label={ongoingLabel} />
     </div>

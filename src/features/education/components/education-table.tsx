@@ -39,7 +39,7 @@ const columns: DataTableColumn<Education>[] = [
   },
   {
     id: 'visible',
-    header: 'Show on portfolio',
+    header: 'Visible',
     cell: (education) => (
       <VisibilityToggle
         isVisible={education.isVisible}

@@ -1,14 +1,14 @@
 'use client';
 
 import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils/cn';
 import { MONTH_LABELS, formatYearMonth, parseYearMonth, toYearMonth } from '@/lib/utils/format-date';
 
-import type { Ref } from 'react';
+import type { KeyboardEvent, Ref } from 'react';
 
 const MONTH_NAMES_LONG = [
   'January',
@@ -26,6 +26,17 @@ const MONTH_NAMES_LONG = [
 ];
 export const MIN_YEAR = 1970;
 const YEARS_AHEAD = 10;
+const MONTHS_PER_ROW = 3;
+
+// How many months each key moves the focus within the month grid; Home and End are handled separately.
+const MONTH_STEPS: Record<string, number> = {
+  ArrowLeft: -1,
+  ArrowRight: 1,
+  ArrowUp: -MONTHS_PER_ROW,
+  ArrowDown: MONTHS_PER_ROW,
+  PageUp: -12,
+  PageDown: 12,
+};
 
 export type MonthPickerProps = {
   // The field's id; its label must have the id `<id>-label`.
@@ -36,6 +47,8 @@ export type MonthPickerProps = {
   // Called when the picker closes, so validation runs like it does when a text field loses focus.
   onClose?: () => void;
   canClear: boolean;
+  // Where to open while empty, e.g. the start month for an end month; the current month when null too.
+  openNear?: string | null;
   triggerRef?: Ref<HTMLButtonElement>;
   ariaInvalid?: boolean;
   ariaDescribedBy?: string;
@@ -46,21 +59,68 @@ function currentYearMonth() {
   return { year: now.getFullYear(), month: now.getMonth() + 1 };
 }
 
-// The one date picker of the CMS: calendar dates are months (`YYYY-MM`), picked from a year page of 12 months.
-export function MonthPicker({ id, value, onChange, onClose, canClear, triggerRef, ariaInvalid, ariaDescribedBy }: MonthPickerProps) {
+/**
+ * The one date picker of the CMS: calendar dates are months (`YYYY-MM`), picked from a year page of 12 months. The
+ * months work as a keyboard grid: arrows move by month and row, Page Up / Page Down by year, Home / End to the row's
+ * ends of the year; only the focused month is in the Tab order, so Tab leaves the grid in one step.
+ */
+export function MonthPicker({
+  id,
+  value,
+  onChange,
+  onClose,
+  canClear,
+  openNear = null,
+  triggerRef,
+  ariaInvalid,
+  ariaDescribedBy,
+}: MonthPickerProps) {
   const selected = value === null ? null : parseYearMonth(value);
   const today = currentYearMonth();
   const maxYear = today.year + YEARS_AHEAD;
   const [isOpen, setIsOpen] = useState(false);
   const [shownYear, setShownYear] = useState(selected?.year ?? today.year);
+  const [focusedMonth, setFocusedMonth] = useState(selected?.month ?? today.month);
+  const monthButtons = useRef<(HTMLButtonElement | null)[]>([]);
+  // Set by a key press, so focus follows the keyboard but never jumps on its own.
+  const shouldMoveFocus = useRef(false);
+
+  useEffect(() => {
+    if (shouldMoveFocus.current) {
+      shouldMoveFocus.current = false;
+      monthButtons.current[focusedMonth - 1]?.focus();
+    }
+  }, [focusedMonth, shownYear]);
 
   const changeOpen = (open: boolean): void => {
     if (open) {
-      setShownYear(selected?.year ?? today.year);
+      const start = selected ?? (openNear === null ? null : parseYearMonth(openNear)) ?? today;
+      setShownYear(start.year);
+      setFocusedMonth(start.month);
     } else {
       onClose?.();
     }
     setIsOpen(open);
+  };
+
+  const moveFocus = (months: number): void => {
+    const target = shownYear * 12 + (focusedMonth - 1) + months;
+    const year = Math.floor(target / 12);
+    if (year < MIN_YEAR || year > maxYear) {
+      return;
+    }
+    shouldMoveFocus.current = true;
+    setShownYear(year);
+    setFocusedMonth((target % 12) + 1);
+  };
+
+  const handleGridKeyDown = (event: KeyboardEvent<HTMLButtonElement>): void => {
+    const step = event.key === 'Home' ? 1 - focusedMonth : event.key === 'End' ? 12 - focusedMonth : MONTH_STEPS[event.key];
+    if (step === undefined) {
+      return;
+    }
+    event.preventDefault();
+    moveFocus(step);
   };
 
   const pick = (month: number): void => {
@@ -90,7 +150,7 @@ export function MonthPicker({ id, value, onChange, onClose, canClear, triggerRef
         className="w-64"
         align="start"
         onOpenAutoFocus={(event) => {
-          // Start on the selected month (or the current one) rather than on the "previous year" button.
+          // Start on the focused month (selected, near the related month, or current) rather than on "previous year".
           const target = (event.currentTarget as HTMLElement | null)?.querySelector<HTMLButtonElement>('[data-initial-focus="true"]');
           if (target) {
             event.preventDefault();
@@ -127,20 +187,25 @@ export function MonthPicker({ id, value, onChange, onClose, canClear, triggerRef
             <ChevronRightIcon aria-hidden />
           </Button>
         </div>
-        <div className="grid grid-cols-3 gap-1">
+        <div role="group" aria-label={`Months of ${shownYear}`} className="grid grid-cols-3 gap-1">
           {MONTH_LABELS.map((label, index) => {
             const month = index + 1;
             const isSelected = selected?.year === shownYear && selected.month === month;
-            const isInitialFocus = isSelected || (selected === null && shownYear === today.year && month === today.month);
+            const isFocusTarget = month === focusedMonth;
             return (
               <Button
                 key={label}
+                ref={(button) => {
+                  monthButtons.current[index] = button;
+                }}
                 type="button"
                 variant={isSelected ? 'default' : 'ghost'}
                 size="sm"
                 aria-label={`${MONTH_NAMES_LONG[index] ?? label} ${shownYear}`}
                 aria-pressed={isSelected}
-                data-initial-focus={isInitialFocus}
+                tabIndex={isFocusTarget ? 0 : -1}
+                onKeyDown={handleGridKeyDown}
+                data-initial-focus={isFocusTarget}
                 onClick={() => {
                   pick(month);
                 }}

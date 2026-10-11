@@ -43,7 +43,7 @@ export function ProjectTable({ projects }: { projects: Project[] }) {
     },
     {
       id: 'visible',
-      header: 'Show on portfolio',
+      header: 'Visible',
       cell: (project) => (
         <VisibilityToggle
           isVisible={project.isVisible}

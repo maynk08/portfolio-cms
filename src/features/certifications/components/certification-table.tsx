@@ -53,7 +53,7 @@ export function CertificationTable({ page, currentMonth }: CertificationTablePro
     },
     {
       id: 'visible',
-      header: 'Show on portfolio',
+      header: 'Visible',
       cell: (certification) => (
         <VisibilityToggle
           isVisible={certification.isVisible}

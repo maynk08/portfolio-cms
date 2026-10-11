@@ -33,7 +33,7 @@ export function SectionsTable({ sections }: { sections: Section[] }) {
     },
     {
       id: 'visible',
-      header: 'Show on portfolio',
+      header: 'Visible',
       cell: (section) => (
         <VisibilityToggle
           isVisible={section.isVisible}

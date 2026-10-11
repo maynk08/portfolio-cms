@@ -24,7 +24,7 @@ export function SkillGroupTable({ groups }: { groups: SkillGroup[] }) {
     { id: 'skills', header: 'Skills', isSecondary: true, cell: describeSkillCount },
     {
       id: 'visible',
-      header: 'Show on portfolio',
+      header: 'Visible',
       cell: (group) => (
         <VisibilityToggle
           isVisible={group.isVisible}

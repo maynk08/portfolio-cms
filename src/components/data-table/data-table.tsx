@@ -112,7 +112,13 @@ export function DataTable<T>({
             {columns.map((column) => (
               <TableHead
                 key={column.id}
-                className={cn(alignClass(column.align), column.isSecondary === true && 'hidden md:table-cell', column.className)}
+                // Headings wrap rather than being cut off when a narrow screen scrolls the table sideways.
+                className={cn(
+                  'whitespace-normal',
+                  alignClass(column.align),
+                  column.isSecondary === true && 'hidden md:table-cell',
+                  column.className,
+                )}
               >
                 {column.isHeaderVisuallyHidden === true ? <span className="sr-only">{column.header}</span> : column.header}
               </TableHead>
