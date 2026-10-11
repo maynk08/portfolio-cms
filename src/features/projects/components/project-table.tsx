@@ -16,10 +16,17 @@ import type { DataTableColumn } from '@/components/data-table/data-table';
 import type { Project } from '@/features/projects/schemas';
 
 export function ProjectTable({ projects }: { projects: Project[] }) {
-  const { orderedRows, move } = useOptimisticOrder(projects, (project) => project.id, reorderProjects);
+  const { orderedRows, move, moveTo } = useOptimisticOrder(projects, (project) => project.id, reorderProjects);
 
   const columns: DataTableColumn<Project>[] = [
-    { id: 'position', header: 'Position', align: 'end', className: 'w-20', cell: (project) => orderedRows.indexOf(project) + 1 },
+    {
+      id: 'position',
+      header: 'Position',
+      isSecondary: true,
+      align: 'end',
+      className: 'w-20',
+      cell: (project) => orderedRows.indexOf(project) + 1,
+    },
     {
       id: 'title',
       header: 'Project',
@@ -59,6 +66,7 @@ export function ProjectTable({ projects }: { projects: Project[] }) {
       caption="Projects, in display order"
       columns={columns}
       rows={orderedRows}
+      sorting={{ onMoveTo: moveTo }}
       getRowId={(project) => project.id}
       getRowLabel={(project) => project.title}
       emptyState={

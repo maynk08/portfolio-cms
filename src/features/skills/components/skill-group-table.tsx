@@ -16,10 +16,17 @@ import type { DataTableColumn } from '@/components/data-table/data-table';
 import type { SkillGroup } from '@/features/skills/schemas';
 
 export function SkillGroupTable({ groups }: { groups: SkillGroup[] }) {
-  const { orderedRows, move } = useOptimisticOrder(groups, (group) => group.id, reorderSkillGroups);
+  const { orderedRows, move, moveTo } = useOptimisticOrder(groups, (group) => group.id, reorderSkillGroups);
 
   const columns: DataTableColumn<SkillGroup>[] = [
-    { id: 'position', header: 'Position', align: 'end', className: 'w-20', cell: (group) => orderedRows.indexOf(group) + 1 },
+    {
+      id: 'position',
+      header: 'Position',
+      isSecondary: true,
+      align: 'end',
+      className: 'w-20',
+      cell: (group) => orderedRows.indexOf(group) + 1,
+    },
     { id: 'name', header: 'Group', cell: (group) => <span className="font-medium">{group.name}</span> },
     { id: 'skills', header: 'Skills', isSecondary: true, cell: describeSkillCount },
     {
@@ -40,6 +47,7 @@ export function SkillGroupTable({ groups }: { groups: SkillGroup[] }) {
       caption="Skill groups, in display order"
       columns={columns}
       rows={orderedRows}
+      sorting={{ onMoveTo: moveTo }}
       getRowId={(group) => group.id}
       getRowLabel={(group) => group.name}
       emptyState={

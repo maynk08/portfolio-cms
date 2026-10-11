@@ -1,5 +1,6 @@
 'use client';
 
+import { LockedTableRow, SortableRows, SortableTableRow } from '@/components/data-table/sortable-rows';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils/cn';
@@ -17,6 +18,13 @@ export interface DataTableColumn<T> {
   // Keeps the header for screen readers only, for narrow columns such as a show/hide switch.
   isHeaderVisuallyHidden?: boolean;
   className?: string;
+}
+
+export interface DataTableSorting<T> {
+  // Called when a row is dropped at another position (indexes into `rows`).
+  onMoveTo: (fromIndex: number, toIndex: number) => void;
+  // Rows that keep their place, such as the hero section.
+  isRowLocked?: (row: T) => boolean;
 }
 
 export interface DataTableSelection {
@@ -37,6 +45,8 @@ type DataTableProps<T> = {
   // Shown instead of the table when there are no rows.
   emptyState: ReactNode;
   selection?: DataTableSelection;
+  // Adds a drag handle to every row, for manually ordered lists.
+  sorting?: DataTableSorting<T>;
   // While the list refreshes after a change, the old rows stay visible, slightly dimmed.
   isRefreshing?: boolean;
 };
@@ -54,6 +64,7 @@ export function DataTable<T>({
   rowActions,
   emptyState,
   selection,
+  sorting,
   isRefreshing = false,
 }: DataTableProps<T>) {
   if (rows.length === 0) {
@@ -92,12 +103,43 @@ export function DataTable<T>({
     selection.onChange(next);
   };
 
+  // The cells after the drag handle: selection checkbox, the columns, row actions.
+  const renderCells = (row: T, id: string, isSelected: boolean): ReactNode => (
+    <>
+      {selection !== undefined && (
+        <TableCell>
+          <Checkbox
+            aria-label={`Select "${getRowLabel(row)}"`}
+            checked={isSelected}
+            onCheckedChange={(checked) => {
+              toggleRow(id, checked === true);
+            }}
+          />
+        </TableCell>
+      )}
+      {columns.map((column) => (
+        <TableCell
+          key={column.id}
+          className={cn('max-w-xs', alignClass(column.align), column.isSecondary === true && 'hidden md:table-cell', column.className)}
+        >
+          {column.cell(row)}
+        </TableCell>
+      ))}
+      {rowActions !== undefined && <TableCell className="text-right">{rowActions(row)}</TableCell>}
+    </>
+  );
+
   return (
     <div aria-busy={isRefreshing} className={cn('rounded-lg border transition-opacity', isRefreshing && 'opacity-60')}>
       <Table>
         <TableCaption className="sr-only">{caption}</TableCaption>
         <TableHeader>
           <TableRow>
+            {sorting !== undefined && (
+              <TableHead className="w-10">
+                <span className="sr-only">Reorder</span>
+              </TableHead>
+            )}
             {selection !== undefined && (
               <TableHead className="w-10">
                 <Checkbox
@@ -131,39 +173,41 @@ export function DataTable<T>({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {rows.map((row) => {
-            const id = getRowId(row);
-            const isSelected = selection?.selectedIds.has(id) === true;
-            return (
-              <TableRow key={id} data-state={isSelected ? 'selected' : undefined}>
-                {selection !== undefined && (
-                  <TableCell>
-                    <Checkbox
-                      aria-label={`Select "${getRowLabel(row)}"`}
-                      checked={isSelected}
-                      onCheckedChange={(checked) => {
-                        toggleRow(id, checked === true);
-                      }}
-                    />
-                  </TableCell>
-                )}
-                {columns.map((column) => (
-                  <TableCell
-                    key={column.id}
-                    className={cn(
-                      'max-w-xs',
-                      alignClass(column.align),
-                      column.isSecondary === true && 'hidden md:table-cell',
-                      column.className,
-                    )}
-                  >
-                    {column.cell(row)}
-                  </TableCell>
-                ))}
-                {rowActions !== undefined && <TableCell className="text-right">{rowActions(row)}</TableCell>}
-              </TableRow>
-            );
-          })}
+          {sorting === undefined ? (
+            rows.map((row) => {
+              const id = getRowId(row);
+              const isSelected = selection?.selectedIds.has(id) === true;
+              return (
+                <TableRow key={id} data-state={isSelected ? 'selected' : undefined}>
+                  {renderCells(row, id, isSelected)}
+                </TableRow>
+              );
+            })
+          ) : (
+            <SortableRows
+              rowIds={rowIds}
+              movableIds={rows.filter((row) => sorting.isRowLocked?.(row) !== true).map(getRowId)}
+              getLabel={(id) => {
+                const row = rows[rowIds.indexOf(id)];
+                return row === undefined ? 'The row' : getRowLabel(row);
+              }}
+              onMoveTo={sorting.onMoveTo}
+            >
+              {rows.map((row) => {
+                const id = getRowId(row);
+                const isSelected = selection?.selectedIds.has(id) === true;
+                return sorting.isRowLocked?.(row) === true ? (
+                  <LockedTableRow key={id} isSelected={isSelected}>
+                    {renderCells(row, id, isSelected)}
+                  </LockedTableRow>
+                ) : (
+                  <SortableTableRow key={id} id={id} label={getRowLabel(row)} isSelected={isSelected}>
+                    {renderCells(row, id, isSelected)}
+                  </SortableTableRow>
+                );
+              })}
+            </SortableRows>
+          )}
         </TableBody>
       </Table>
     </div>

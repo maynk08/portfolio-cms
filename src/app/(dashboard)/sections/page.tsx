@@ -13,7 +13,7 @@ export default async function SectionsPage() {
     <>
       <PageHeader
         title="Sections"
-        description="Rename the sections of the portfolio or hide them. Hidden sections also leave the navigation. Changing the order comes in a later update."
+        description="Rename the sections of the portfolio, hide them, or change their order: drag a row by its handle, or use Move up / Move down in its menu. Hidden sections also leave the navigation."
       />
       <SectionsTable sections={sections} />
     </>

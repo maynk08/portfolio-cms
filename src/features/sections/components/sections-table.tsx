@@ -4,21 +4,34 @@ import { PanelsTopLeftIcon, PencilIcon } from 'lucide-react';
 import { useState } from 'react';
 
 import { DataTable } from '@/components/data-table/data-table';
+import { moveRowActions } from '@/components/data-table/item-row-actions';
 import { RowActions } from '@/components/data-table/row-actions';
+import { useOptimisticOrder } from '@/components/data-table/use-optimistic-order';
 import { VisibilityToggle } from '@/components/data-table/visibility-toggle';
 import { EmptyState } from '@/components/feedback/empty-state';
-import { setSectionVisibility } from '@/features/sections/actions';
+import { reorderSections, setSectionVisibility } from '@/features/sections/actions';
 import { RenameSectionDialog } from '@/features/sections/components/rename-section-dialog';
 import { SECTION_DETAILS } from '@/features/sections/schemas';
 
 import type { DataTableColumn } from '@/components/data-table/data-table';
 import type { Section } from '@/features/sections/schemas';
 
+// The hero is the top of the page and holds its main heading, so it keeps its place.
+const isHero = (section: Section): boolean => section.key === 'hero';
+
 export function SectionsTable({ sections }: { sections: Section[] }) {
   const [renaming, setRenaming] = useState<Section | null>(null);
+  const { orderedRows, move, moveTo } = useOptimisticOrder(sections, (section) => section.key, reorderSections);
 
   const columns: DataTableColumn<Section>[] = [
-    { id: 'position', header: 'Position', cell: (section) => sections.indexOf(section) + 1, align: 'end', className: 'w-20' },
+    {
+      id: 'position',
+      header: 'Position',
+      isSecondary: true,
+      cell: (section) => orderedRows.indexOf(section) + 1,
+      align: 'end',
+      className: 'w-20',
+    },
     { id: 'heading', header: 'Heading', cell: (section) => <span className="font-medium">{section.heading}</span> },
     {
       id: 'section',
@@ -49,7 +62,8 @@ export function SectionsTable({ sections }: { sections: Section[] }) {
       <DataTable
         caption="Portfolio sections"
         columns={columns}
-        rows={sections}
+        rows={orderedRows}
+        sorting={{ onMoveTo: moveTo, isRowLocked: isHero }}
         getRowId={(section) => section.key}
         getRowLabel={(section) => section.heading}
         emptyState={
@@ -59,20 +73,32 @@ export function SectionsTable({ sections }: { sections: Section[] }) {
             description="Restart the backend to create the default sections."
           />
         }
-        rowActions={(section) => (
-          <RowActions
-            itemLabel={section.heading}
-            actions={[
-              {
-                label: 'Rename',
-                icon: PencilIcon,
-                onSelect: () => {
-                  setRenaming(section);
+        rowActions={(section) => {
+          const index = orderedRows.indexOf(section);
+          return (
+            <RowActions
+              itemLabel={section.heading}
+              actions={[
+                ...moveRowActions({
+                  // Nothing moves above the hero.
+                  isFirst: index <= 1,
+                  isLast: index === orderedRows.length - 1,
+                  lockedReason: isHero(section) ? 'The hero stays at the top' : undefined,
+                  onMove: (offset) => {
+                    move(index, offset);
+                  },
+                }),
+                {
+                  label: 'Rename',
+                  icon: PencilIcon,
+                  onSelect: () => {
+                    setRenaming(section);
+                  },
                 },
-              },
-            ]}
-          />
-        )}
+              ]}
+            />
+          );
+        }}
       />
       {renaming !== null && (
         <RenameSectionDialog

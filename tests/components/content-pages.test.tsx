@@ -37,10 +37,13 @@ function project(id: string, title: string): Project {
 const projects = [project('a', 'Alpha'), project('b', 'Beta'), project('c', 'Gamma')];
 
 function titlesInOrder(): string[] {
-  return within(screen.getByRole('table'))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) => within(row).getAllByRole('cell')[1]?.textContent ?? '');
+  return (
+    within(screen.getByRole('table'))
+      .getAllByRole('row')
+      .slice(1)
+      // Cells: drag handle, position, title.
+      .map((row) => within(row).getAllByRole('cell')[2]?.textContent ?? '')
+  );
 }
 
 beforeEach(() => {
